@@ -1,4 +1,4 @@
-const TRACK_API = "https://visit-tracker.visit-tracker.workers.dev";
+const TRACK_API = "https://api.aiduty.asia";
 
 function initRevealOnScroll() {
   const cards = document.querySelectorAll(".card");
