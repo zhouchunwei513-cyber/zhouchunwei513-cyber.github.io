@@ -1,3 +1,5 @@
+const TRACK_API = "https://REPLACE_WITH_WORKER_URL";
+
 function initRevealOnScroll() {
   const cards = document.querySelectorAll(".card");
   const observer = new IntersectionObserver(
@@ -14,10 +16,29 @@ function initRevealOnScroll() {
   cards.forEach((card) => observer.observe(card));
 }
 
+function trackVisit() {
+  if (!TRACK_API || TRACK_API.includes("REPLACE_WITH_WORKER_URL")) return;
+  try {
+    navigator.sendBeacon(
+      TRACK_API + "/api/track",
+      new Blob([JSON.stringify({ path: location.pathname, ua: navigator.userAgent })], {
+        type: "application/json",
+      })
+    );
+  } catch (e) {
+    fetch(TRACK_API + "/api/track", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: location.pathname, ua: navigator.userAgent }),
+    }).catch(() => {});
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initRevealOnScroll();
   const cards = document.querySelectorAll(".card");
   if (cards.length && "IntersectionObserver" in window === false) {
     cards.forEach((card) => card.classList.add("visible"));
   }
+  trackVisit();
 });
