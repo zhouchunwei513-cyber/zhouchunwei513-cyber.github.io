@@ -4,7 +4,7 @@ compatibility_date = "2024-01-01"
 
 [[kv_namespaces]]
 binding = "VISIT_KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "27054ba28dc343cfa14d0cc2437bb69b"
 
 [vars]
 ADMIN_USER = "admin"

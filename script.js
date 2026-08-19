@@ -1,4 +1,4 @@
-const TRACK_API = "https://REPLACE_WITH_WORKER_URL";
+const TRACK_API = "https://visit-tracker.visit-tracker.workers.dev";
 
 function initRevealOnScroll() {
   const cards = document.querySelectorAll(".card");
