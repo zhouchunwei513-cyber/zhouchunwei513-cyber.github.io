@@ -550,27 +550,27 @@
                 <div class="stats-grid">
                     <div class="stat-card purple">
                         <div class="icon">👀</div>
-                        <div class="label">总访问量</div>
+                        <div class="label">总浏览量</div>
                         <div class="value" id="totalVisits">--</div>
-                        <div class="change up" id="totalChange">↑ --%</div>
+                        <div class="change neutral" id="totalChange">累计 · 真实数据</div>
                     </div>
                     <div class="stat-card cyan">
-                        <div class="icon">📅</div>
-                        <div class="label">今日访问</div>
-                        <div class="value" id="todayVisits">--</div>
-                        <div class="change up" id="todayChange">↑ --%</div>
-                    </div>
-                    <div class="stat-card yellow">
-                        <div class="icon">🟢</div>
-                        <div class="label">在线用户</div>
-                        <div class="value" id="onlineUsers">--</div>
-                        <div class="change neutral">实时</div>
-                    </div>
-                    <div class="stat-card red">
                         <div class="icon">👤</div>
                         <div class="label">独立访客</div>
+                        <div class="value" id="todayVisits">--</div>
+                        <div class="change neutral" id="todayChange">累计 · 真实数据</div>
+                    </div>
+                    <div class="stat-card yellow">
+                        <div class="icon">📄</div>
+                        <div class="label">本页浏览</div>
+                        <div class="value" id="onlineUsers">--</div>
+                        <div class="change neutral">当前页面累计</div>
+                    </div>
+                    <div class="stat-card red">
+                        <div class="icon">📈</div>
+                        <div class="label">人均浏览</div>
                         <div class="value" id="uniqueVisitors">--</div>
-                        <div class="change up" id="uniqueChange">↑ --%</div>
+                        <div class="change neutral" id="uniqueChange">页 / 访客</div>
                     </div>
                 </div>
 
@@ -708,20 +708,20 @@
                                 <td>zhouchunwei513-cyber.github.io</td>
                             </tr>
                             <tr>
-                                <td style="color: var(--text-muted);">统计API</td>
-                                <td>api.aiduty.asia</td>
+                                <td style="color: var(--text-muted);">统计服务</td>
+                                <td>不蒜子 busuanzi.ibruce.info（真实数据）</td>
                             </tr>
                             <tr>
                                 <td style="color: var(--text-muted);">后台地址</td>
                                 <td>/admin.html</td>
                             </tr>
                             <tr>
-                                <td style="color: var(--text-muted);">API状态</td>
-                                <td><span class="badge green" id="apiStatus">● 检测中</span></td>
+                                <td style="color: var(--text-muted);">统计服务状态</td>
+                                <td><span class="badge yellow" id="apiStatus">● 检测中</span></td>
                             </tr>
                             <tr>
-                                <td style="color: var(--text-muted);">数据刷新间隔</td>
-                                <td>30秒</td>
+                                <td style="color: var(--text-muted);">数据刷新方式</td>
+                                <td>页面加载时获取（防止虚增计数）</td>
                             </tr>
                             <tr>
                                 <td style="color: var(--text-muted);">登录密钥</td>
@@ -736,8 +736,28 @@
 
     <script>
         // Configuration
-        const STATS_API = 'https://api.aiduty.asia';
+        // 统计来源：不蒜子（JSONP，真实数据，无 CORS 限制）
+        // 注意：不蒜子每次请求会计一次浏览量，因此只加载一次并缓存，不做轮询
         const DEFAULT_PASSKEY = 'xiaomi2026';
+        let busuanziData = null;      // cached real stats {site_pv, site_uv, page_pv}
+
+        // Load busuanzi stats via JSONP (once per page load)
+        function loadBusuanzi() {
+            return new Promise((resolve) => {
+                let settled = false;
+                const done = (data) => { if (!settled) { settled = true; resolve(data); } };
+                const cb = 'bsz_admin_cb_' + Date.now();
+                window[cb] = function (data) {
+                    try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+                    done(data);
+                };
+                const s = document.createElement('script');
+                s.src = 'https://busuanzi.ibruce.info/busuanzi?jsonpCallback=' + cb;
+                s.onerror = () => done(null);
+                document.body.appendChild(s);
+                setTimeout(() => done(null), 8000);
+            });
+        }
 
         // Charts
         let trendChart, deviceChart, hourlyChart, sourceChart;
@@ -749,7 +769,6 @@
             if (authed) {
                 document.getElementById('loginScreen').style.display = 'none';
                 loadData();
-                startAutoRefresh();
             }
         });
 
@@ -761,7 +780,6 @@
                 sessionStorage.setItem('xm_admin', 'true');
                 document.getElementById('loginScreen').style.display = 'none';
                 loadData();
-                startAutoRefresh();
             } else {
                 document.getElementById('loginError').style.display = 'block';
                 document.getElementById('passkeyInput').value = '';
@@ -799,14 +817,13 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        // Auto refresh
-        let refreshTimer;
-        function startAutoRefresh() {
-            refreshTimer = setInterval(loadData, 30000);
-        }
+        // 数据在页面加载时获取一次；不蒜子按请求计数，轮询会导致数据虚增
 
-        // Load data
+        // Load data (busuanzi fetched once, cached for refreshes)
         async function loadData() {
+            if (busuanziData === null) {
+                busuanziData = await loadBusuanzi();
+            }
             await Promise.all([
                 loadStats(),
                 loadTrendChart(),
@@ -821,50 +838,39 @@
             loadPageStats();
         }
 
-        // Check API status
-        async function checkApiStatus() {
+        // Check stats service status (busuanzi)
+        function checkApiStatus() {
             const badge = document.getElementById('apiStatus');
-            try {
-                const res = await fetch(`${STATS_API}/api/stats`, { method: 'HEAD' });
-                badge.textContent = '● 在线';
+            if (busuanziData && typeof busuanziData.site_pv === 'number') {
+                badge.textContent = '● 在线（真实数据）';
                 badge.className = 'badge green';
-            } catch {
-                badge.textContent = '● 离线（使用本地数据）';
+            } else {
+                badge.textContent = '● 离线（展示本地数据）';
                 badge.className = 'badge yellow';
             }
         }
 
-        // Load stats
+        // Load stats — real data from busuanzi
         async function loadStats() {
-            try {
-                const res = await fetch(`${STATS_API}/api/stats`);
-                if (!res.ok) throw new Error('API error');
-                const data = await res.json();
+            if (busuanziData && typeof busuanziData.site_pv === 'number') {
+                const pv = busuanziData.site_pv || 0;
+                const uv = busuanziData.site_uv || 0;
+                const pagePv = busuanziData.page_pv || 0;
+                const avg = uv > 0 ? (pv / uv) : 0;
 
-                document.getElementById('totalVisits').textContent = formatNum(data.total || 0);
-                document.getElementById('todayVisits').textContent = formatNum(data.today || 0);
-                document.getElementById('onlineUsers').textContent = formatNum(data.online || 0);
-                document.getElementById('uniqueVisitors').textContent = formatNum(data.unique || 0);
-
-                const totalChange = data.totalChange || (Math.random() * 20 + 5);
-                const todayChange = data.todayChange || (Math.random() * 30 + 10);
-                document.getElementById('totalChange').textContent = `↑ ${totalChange.toFixed(1)}%`;
-                document.getElementById('todayChange').textContent = `↑ ${todayChange.toFixed(1)}%`;
-            } catch {
-                // Fallback local data
+                document.getElementById('totalVisits').textContent = formatNum(pv);
+                document.getElementById('todayVisits').textContent = formatNum(uv);
+                document.getElementById('onlineUsers').textContent = formatNum(pagePv);
+                document.getElementById('uniqueVisitors').textContent = avg.toFixed(1);
+            } else {
+                // Fallback: local counter (busuanzi unreachable)
                 const total = parseInt(localStorage.getItem('xm_total_visits') || '1286');
-                const today = Math.floor(total * 0.08) + Math.floor(Math.random() * 20);
-                const online = Math.floor(Math.random() * 8) + 2;
                 const unique = Math.floor(total * 0.6);
 
                 document.getElementById('totalVisits').textContent = formatNum(total);
-                document.getElementById('todayVisits').textContent = formatNum(today);
-                document.getElementById('onlineUsers').textContent = online;
-                document.getElementById('uniqueVisitors').textContent = formatNum(unique);
-
-                document.getElementById('totalChange').textContent = `↑ ${(Math.random() * 15 + 5).toFixed(1)}%`;
-                document.getElementById('todayChange').textContent = `↑ ${(Math.random() * 25 + 10).toFixed(1)}%`;
-                document.getElementById('uniqueChange').textContent = `↑ ${(Math.random() * 10 + 3).toFixed(1)}%`;
+                document.getElementById('todayVisits').textContent = formatNum(unique);
+                document.getElementById('onlineUsers').textContent = total;
+                document.getElementById('uniqueVisitors').textContent = (total / Math.max(unique, 1)).toFixed(1);
             }
         }
 
@@ -873,15 +879,7 @@
             let labels = [];
             let data = [];
 
-            try {
-                const res = await fetch(`${STATS_API}/api/trend?days=7`);
-                if (res.ok) {
-                    const json = await res.json();
-                    labels = json.labels || [];
-                    data = json.data || [];
-                }
-            } catch {}
-
+            // 详细趋势数据需要后端统计服务支持，当前以最近累计数据推演展示
             if (labels.length === 0) {
                 // Generate fallback
                 const days = [];
@@ -941,11 +939,8 @@
 
         // Device chart
         async function loadDeviceChart() {
-            let data = { desktop: 45, mobile: 40, tablet: 15 };
-            try {
-                const res = await fetch(`${STATS_API}/api/devices`);
-                if (res.ok) data = await res.json();
-            } catch {}
+            // 设备分布明细需要后端统计服务支持，当前为演示数据
+            const data = { desktop: 45, mobile: 40, tablet: 15 };
 
             const ctx = document.getElementById('deviceChart').getContext('2d');
             if (deviceChart) deviceChart.destroy();
@@ -975,21 +970,13 @@
 
         // Hourly chart
         async function loadHourlyChart() {
+            // 小时分布明细需要后端统计服务支持，当前为演示数据
             let labels = [];
             let data = [];
             for (let i = 0; i < 24; i++) {
                 labels.push(`${i}:00`);
                 data.push(Math.floor(Math.random() * 50) + (i > 8 && i < 22 ? 20 : 5));
             }
-
-            try {
-                const res = await fetch(`${STATS_API}/api/hourly`);
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json.data) data = json.data;
-                    if (json.labels) labels = json.labels;
-                }
-            } catch {}
 
             const ctx = document.getElementById('hourlyChart').getContext('2d');
             if (hourlyChart) hourlyChart.destroy();
@@ -1020,16 +1007,9 @@
 
         // Source chart
         async function loadSourceChart() {
+            // 来源分布明细需要后端统计服务支持，当前为演示数据
             let labels = ['直接访问', '搜索引擎', '社交媒体', '外部链接'];
             let data = [35, 30, 20, 15];
-            try {
-                const res = await fetch(`${STATS_API}/api/sources`);
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json.labels) labels = json.labels;
-                    if (json.data) data = json.data;
-                }
-            } catch {}
 
             const ctx = document.getElementById('sourceChart').getContext('2d');
             if (sourceChart) sourceChart.destroy();
@@ -1121,13 +1101,9 @@
 
         // Recent visitors
         async function loadRecentVisitors() {
+            // 访客明细需要后端统计服务支持，当前为演示数据（区域字段已支持真实IP归属地解析）
             let visitors = [];
-            try {
-                const res = await fetch(`${STATS_API}/api/visitors?limit=10`);
-                if (res.ok) visitors = await res.json();
-            } catch {}
-
-            if (!visitors.length) {
+            {
                 const sources = ['直接访问', 'Google', 'Bing', '百度', '社交媒体'];
                 const pages = ['/', '/', '/', '/', '/'];
                 const devices = ['桌面端', '移动端', '桌面端', '移动端', '平板'];
@@ -1160,13 +1136,9 @@
 
         // All visitors
         async function loadAllVisitors() {
+            // 访客明细需要后端统计服务支持，当前为演示数据（区域字段已支持真实IP归属地解析）
             let visitors = [];
-            try {
-                const res = await fetch(`${STATS_API}/api/visitors/all?limit=50`);
-                if (res.ok) visitors = await res.json();
-            } catch {}
-
-            if (!visitors.length) {
+            {
                 const devices = ['桌面端', '移动端', '平板'];
                 const sources = ['直接访问', 'Google', 'Bing', '百度'];
                 visitors = Array.from({ length: 15 }, (_, i) => {
@@ -1204,20 +1176,24 @@
             `).join('');
         }
 
-        // Page stats
+        // Page stats — derived from real busuanzi data
+        // 站点仅含主站(/)与本后台(/admin.html)，故 site_pv = 主站PV + 后台PV，可真实推导
         async function loadPageStats() {
             let pages = [];
-            try {
-                const res = await fetch(`${STATS_API}/api/pages`);
-                if (res.ok) pages = await res.json();
-            } catch {}
+            if (busuanziData && typeof busuanziData.site_pv === 'number') {
+                const sitePv = busuanziData.site_pv || 0;
+                const adminPv = busuanziData.page_pv || 0; // 本页(后台)的真实PV
+                const homePv = Math.max(sitePv - adminPv, 0);
+                pages = [
+                    { path: '/', visits: homePv },
+                    { path: '/admin.html', visits: adminPv },
+                ].filter(p => p.visits > 0);
+            }
 
             if (!pages.length) {
                 pages = [
-                    { path: '/', visits: 856, percent: 66.6 },
-                    { path: '/admin.html', visits: 320, percent: 24.9 },
-                    { path: '/index.html', visits: 80, percent: 6.2 },
-                    { path: '/about', visits: 30, percent: 2.3 },
+                    { path: '/', visits: 0 },
+                    { path: '/admin.html', visits: 0 },
                 ];
             }
 

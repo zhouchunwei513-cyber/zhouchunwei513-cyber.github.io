@@ -692,15 +692,15 @@
             <div class="stats-bar" id="liveStats">
                 <div class="stat-item">
                     <div class="stat-number" id="statTotal">--</div>
-                    <div class="stat-label">总访问量</div>
+                    <div class="stat-label">总浏览量</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number" id="statToday">--</div>
-                    <div class="stat-label">今日访问</div>
+                    <div class="stat-label">访客总数</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-number" id="statOnline">--</div>
-                    <div class="stat-label">在线用户</div>
+                    <div class="stat-label">本页浏览</div>
                 </div>
             </div>
         </div>
@@ -780,18 +780,18 @@
         <div class="features-grid">
             <div class="feature-card reveal" style="text-align: center;">
                 <div class="stat-number" id="detailTotal" style="font-size: 3rem; margin-bottom: 10px;">--</div>
-                <h3>累计访问</h3>
-                <p>从小秘上线至今的总访问量</p>
+                <h3>累计浏览</h3>
+                <p>小秘上线以来的总页面浏览量</p>
             </div>
             <div class="feature-card reveal" style="text-align: center;">
                 <div class="stat-number" id="detailToday" style="font-size: 3rem; margin-bottom: 10px;">--</div>
-                <h3>今日访问</h3>
-                <p>今天的实时访问数据</p>
+                <h3>独立访客</h3>
+                <p>访问过小秘的访客总数</p>
             </div>
             <div class="feature-card reveal" style="text-align: center;">
                 <div class="stat-number" id="detailOnline" style="font-size: 3rem; margin-bottom: 10px;">--</div>
-                <h3>当前在线</h3>
-                <p>此刻正在浏览小秘的用户数</p>
+                <h3>本页浏览</h3>
+                <p>当前页面的累计浏览次数</p>
             </div>
         </div>
     </section>
@@ -831,9 +831,7 @@
     </div>
 
     <script>
-        // Stats API Configuration
-        const STATS_API = 'https://api.aiduty.asia';
-        const SITE_URL = 'https://zhouchunwei513-cyber.github.io';
+        // Stats: busuanzi (real data, JSONP — no CORS restrictions)
 
         // Navigation scroll effect
         window.addEventListener('scroll', () => {
@@ -870,53 +868,52 @@
 
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        // Track page view
-        async function trackPageView() {
-            try {
-                await fetch(`${STATS_API}/api/track`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        url: window.location.href,
-                        path: window.location.pathname,
-                        referrer: document.referrer || 'direct',
-                        title: document.title,
-                        timestamp: new Date().toISOString()
-                    })
-                });
-            } catch (e) {
-                console.log('Stats tracking:', e.message);
-            }
+        // Load real stats via busuanzi (JSONP, no CORS needed)
+        // Note: each JSONP request counts as a page view, so only call ONCE per page load
+        function loadBusuanzi() {
+            return new Promise((resolve) => {
+                let settled = false;
+                const done = (data) => { if (!settled) { settled = true; resolve(data); } };
+                const cb = 'bsz_cb_' + Date.now();
+                window[cb] = function (data) {
+                    try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+                    done(data);
+                };
+                const s = document.createElement('script');
+                s.src = 'https://busuanzi.ibruce.info/busuanzi?jsonpCallback=' + cb;
+                s.onerror = () => done(null);
+                document.body.appendChild(s);
+                setTimeout(() => done(null), 8000);
+            });
         }
 
-        // Fetch and display stats
+        // Fetch and display stats (busuanzi real data, localStorage fallback)
         async function fetchStats() {
+            let sitePv = null, siteUv = null, pagePv = null;
             try {
-                const res = await fetch(`${STATS_API}/api/stats`);
-                if (!res.ok) throw new Error('API not available');
-                const data = await res.json();
+                const data = await loadBusuanzi();
+                if (data && typeof data.site_pv === 'number') {
+                    sitePv = data.site_pv;
+                    siteUv = data.site_uv;
+                    pagePv = data.page_pv;
+                }
+            } catch (e) { /* fallthrough to local */ }
 
-                const total = data.total || data.totalVisits || 0;
-                const today = data.today || data.todayVisits || 0;
-                const online = data.online || data.onlineUsers || 0;
-
-                animateNumber('statTotal', total);
-                animateNumber('statToday', today);
-                animateNumber('statOnline', online);
-                animateNumber('detailTotal', total);
-                animateNumber('detailToday', today);
-                animateNumber('detailOnline', online);
-            } catch (e) {
-                // Fallback to local counter
+            if (sitePv === null) {
+                // Fallback to local counter when busuanzi unreachable
                 const localTotal = parseInt(localStorage.getItem('xm_total') || '0') + 1;
                 localStorage.setItem('xm_total', localTotal);
-                animateNumber('statTotal', localTotal);
-                animateNumber('statToday', Math.floor(localTotal * 0.05) || 1);
-                animateNumber('statOnline', Math.floor(Math.random() * 5) + 1);
-                animateNumber('detailTotal', localTotal);
-                animateNumber('detailToday', Math.floor(localTotal * 0.05) || 1);
-                animateNumber('detailOnline', Math.floor(Math.random() * 5) + 1);
+                sitePv = localTotal;
+                siteUv = parseInt(localStorage.getItem('xm_uv') || '1');
+                pagePv = localTotal;
             }
+
+            animateNumber('statTotal', sitePv);
+            animateNumber('statToday', siteUv);
+            animateNumber('statOnline', pagePv);
+            animateNumber('detailTotal', sitePv);
+            animateNumber('detailToday', siteUv);
+            animateNumber('detailOnline', pagePv);
         }
 
         // Animate numbers
@@ -944,10 +941,8 @@
             return n.toString();
         }
 
-        // Initialize
-        trackPageView();
+        // Initialize — busuanzi counts per request, so load once only
         fetchStats();
-        setInterval(fetchStats, 30000); // Refresh every 30s
     </script>
 </body>
 </html>
