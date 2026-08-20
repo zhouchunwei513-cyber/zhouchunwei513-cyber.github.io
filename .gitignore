@@ -1,0 +1,6 @@
+# WorkBuddy internal
+.workbuddy/
+
+# OS files
+.DS_Store
+Thumbs.db
