@@ -912,7 +912,7 @@
         // Load real stats via busuanzi (JSONP, no CORS needed)
         // Note: each JSONP request counts as a page view, so only call ONCE per page load
         function loadBusuanzi() {
-            return new Promise((resolve) => {
+            const attempt = () => new Promise((resolve) => {
                 let settled = false;
                 const done = (data) => { if (!settled) { settled = true; resolve(data); } };
                 const cb = 'bsz_cb_' + Date.now();
@@ -925,6 +925,11 @@
                 s.onerror = () => done(null);
                 document.body.appendChild(s);
                 setTimeout(() => done(null), 8000);
+            });
+            return attempt().then(data => {
+                if (data && typeof data.site_pv === 'number') return data;
+                // 一次重试，应对服务偶发 502
+                return new Promise(r => setTimeout(r, 2000)).then(attempt);
             });
         }
 

@@ -547,6 +547,11 @@
                     </button>
                 </div>
 
+                <div style="background: rgba(108,92,231,.12); border: 1px solid rgba(108,92,231,.35); border-radius: 10px; padding: 10px 14px; font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.7;">
+                    ℹ️ 概览四张卡片与「页面统计」为 <b style="color: var(--primary-light);">不蒜子真实数据</b>（按域名统计）；趋势 / 设备 / 小时 / 来源 / 访客明细为演示数据，接入统计后端后自动变为真实。
+                    <span id="localWarn" style="display:none; color: #e67e22;">⚠️ 检测到本地预览环境——本地打开时统计读到的是 localhost 的公共计数（数字异常大），请以 小秘.com 线上地址为准。</span>
+                </div>
+
                 <div class="stats-grid">
                     <div class="stat-card purple">
                         <div class="icon">👀</div>
@@ -576,13 +581,13 @@
 
                 <div class="charts-grid">
                     <div class="chart-card">
-                        <h3>📈 访问趋势（近7天）</h3>
+                        <h3>📈 访问趋势（近7天） <span class="badge yellow" style="font-size: 11px;">演示数据</span></h3>
                         <div class="chart-container">
                             <canvas id="trendChart"></canvas>
                         </div>
                     </div>
                     <div class="chart-card">
-                        <h3>🌐 设备分布</h3>
+                        <h3>🌐 设备分布 <span class="badge yellow" style="font-size: 11px;">演示数据</span></h3>
                         <div class="chart-container">
                             <canvas id="deviceChart"></canvas>
                         </div>
@@ -590,7 +595,7 @@
                 </div>
 
                 <div class="table-card" style="margin-bottom: 30px;">
-                    <h3>🕐 最近访客</h3>
+                    <h3>🕐 最近访客 <span class="badge yellow" style="font-size: 11px;">演示数据</span></h3>
                     <table>
                         <thead>
                             <tr>
@@ -618,13 +623,13 @@
                 </div>
                 <div class="charts-grid">
                     <div class="chart-card">
-                        <h3>📊 每小时访问量（今日）</h3>
+                        <h3>📊 每小时访问量（今日） <span class="badge yellow" style="font-size: 11px;">演示数据</span></h3>
                         <div class="chart-container" style="height: 320px;">
                             <canvas id="hourlyChart"></canvas>
                         </div>
                     </div>
                     <div class="chart-card">
-                        <h3>🔗 来源分析</h3>
+                        <h3>🔗 来源分析 <span class="badge yellow" style="font-size: 11px;">演示数据</span></h3>
                         <div class="chart-container" style="height: 320px;">
                             <canvas id="sourceChart"></canvas>
                         </div>
@@ -641,7 +646,7 @@
                     </div>
                 </div>
                 <div class="table-card">
-                    <h3>👥 所有访客</h3>
+                    <h3>👥 所有访客 <span class="badge yellow" style="font-size: 11px;">演示数据</span></h3>
                     <table>
                         <thead>
                             <tr>
@@ -741,9 +746,9 @@
         const DEFAULT_PASSKEY = 'xiaomi2026';
         let busuanziData = null;      // cached real stats {site_pv, site_uv, page_pv}
 
-        // Load busuanzi stats via JSONP (once per page load)
+        // Load busuanzi stats via JSONP (once per page load, with retry for transient errors)
         function loadBusuanzi() {
-            return new Promise((resolve) => {
+            const attempt = () => new Promise((resolve) => {
                 let settled = false;
                 const done = (data) => { if (!settled) { settled = true; resolve(data); } };
                 const cb = 'bsz_admin_cb_' + Date.now();
@@ -756,6 +761,11 @@
                 s.onerror = () => done(null);
                 document.body.appendChild(s);
                 setTimeout(() => done(null), 8000);
+            });
+            return attempt().then(data => {
+                if (data && typeof data.site_pv === 'number') return data;
+                // 一次重试，应对服务偶发 502
+                return new Promise(r => setTimeout(r, 2000)).then(attempt);
             });
         }
 
@@ -818,6 +828,15 @@
         }
 
         // 数据在页面加载时获取一次；不蒜子按请求计数，轮询会导致数据虚增
+
+        // 本地预览检测：localhost 下统计读到的是公共计数，提醒用户
+        (function detectLocal() {
+            const h = location.hostname;
+            if (h === 'localhost' || h === '127.0.0.1' || location.protocol === 'file:') {
+                const w = document.getElementById('localWarn');
+                if (w) w.style.display = 'inline';
+            }
+        })();
 
         // Load data (busuanzi fetched once, cached for refreshes)
         async function loadData() {
