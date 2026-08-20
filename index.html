@@ -11,6 +11,15 @@
     <meta property="og:description" content="小秘是真正的AGI生活帮手——说出需求，自动匹配人、方法与机会，打通你生活的一切。">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://小秘.com">
+    <meta name="theme-color" content="#6C5CE7">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="小秘">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><defs><linearGradient id='g' x1='4' y1='4' x2='44' y2='44' gradientUnits='userSpaceOnUse'><stop stop-color='%23a29bfe'/><stop offset='.55' stop-color='%236C5CE7'/><stop offset='1' stop-color='%2300cec9'/></linearGradient></defs><rect x='2' y='2' width='44' height='44' rx='13' fill='url(%23g)'/><path d='M14.5 13.5h19a6 6 0 0 1 6 6v9a6 6 0 0 1-6 6H24l-7.5 5.5V34.5h-2a6 6 0 0 1-6-6v-9a6 6 0 0 1 6-6Z' fill='rgba(7,7,20,.58)'/><path d='M24 17.6l1.8 4.6 4.6 1.8-4.6 1.8-1.8 4.6-1.8-4.6-4.6-1.8 4.6-1.8Z' fill='%23fff'/><circle cx='15.8' cy='24' r='1.9' fill='%2355efc4'/><circle cx='32.2' cy='24' r='1.9' fill='%23a29bfe'/></svg>">
     <style>
         * {
@@ -1064,6 +1073,22 @@
                 }
             } catch (e) { /* silent */ }
         })();
+    </script>
+
+    <!-- PWA: 注册 Service Worker（小米13 安装到主屏幕必需） -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(() => {});
+            });
+        }
+
+        // 安装提示监听（小米 Chrome 可能支持）
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
     </script>
 </body>
 </html>
