@@ -11,10 +11,7 @@
     <meta property="og:description" content="小秘是真正的AGI生活帮手——说出需求，自动匹配人、方法与机会，打通你生活的一切。">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://小秘.com">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤫</text></svg>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><defs><linearGradient id='g' x1='4' y1='4' x2='44' y2='44' gradientUnits='userSpaceOnUse'><stop stop-color='%23a29bfe'/><stop offset='.55' stop-color='%236C5CE7'/><stop offset='1' stop-color='%2300cec9'/></linearGradient></defs><rect x='2' y='2' width='44' height='44' rx='13' fill='url(%23g)'/><path d='M14.5 13.5h19a6 6 0 0 1 6 6v9a6 6 0 0 1-6 6H24l-7.5 5.5V34.5h-2a6 6 0 0 1-6-6v-9a6 6 0 0 1 6-6Z' fill='rgba(7,7,20,.58)'/><path d='M24 17.6l1.8 4.6 4.6 1.8-4.6 1.8-1.8 4.6-1.8-4.6-4.6-1.8 4.6-1.8Z' fill='%23fff'/><circle cx='15.8' cy='24' r='1.9' fill='%2355efc4'/><circle cx='32.2' cy='24' r='1.9' fill='%23a29bfe'/></svg>">
     <style>
         * {
             margin: 0;
@@ -43,7 +40,7 @@
         }
 
         body {
-            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '微软雅黑', sans-serif;
             background: var(--bg-dark);
             color: var(--text-primary);
             line-height: 1.6;
@@ -133,7 +130,30 @@
         }
 
         .logo-icon {
-            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-icon svg {
+            width: 36px;
+            height: 36px;
+            display: block;
+            filter: drop-shadow(0 4px 14px rgba(108, 92, 231, 0.45));
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover .logo-icon svg {
+            transform: rotate(-6deg) scale(1.06);
+        }
+
+        .logo-icon .xm-spark {
+            transform-origin: 24px 24px;
+            animation: sparkPulse 2.6s ease-in-out infinite;
+        }
+
+        @keyframes sparkPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.88; }
         }
 
         .logo-text {
@@ -662,7 +682,27 @@
     <!-- Navigation -->
     <nav id="navbar">
         <a href="#" class="logo">
-            <span class="logo-icon">🤫</span>
+            <span class="logo-icon">
+                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="小秘LOGO">
+                    <defs>
+                        <linearGradient id="xmg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#a29bfe"/>
+                            <stop offset="0.55" stop-color="#6C5CE7"/>
+                            <stop offset="1" stop-color="#00cec9"/>
+                        </linearGradient>
+                        <linearGradient id="xms" x1="19" y1="19" x2="31" y2="31" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#ffffff"/>
+                            <stop offset="1" stop-color="#b3fff2"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="2" y="2" width="44" height="44" rx="13" fill="url(#xmg)"/>
+                    <rect x="2.8" y="2.8" width="42.4" height="42.4" rx="12.2" stroke="rgba(255,255,255,0.25)" stroke-width="1.6"/>
+                    <path d="M14.5 13.5h19a6 6 0 0 1 6 6v9a6 6 0 0 1-6 6H24l-7.5 5.5V34.5h-2a6 6 0 0 1-6-6v-9a6 6 0 0 1 6-6Z" fill="rgba(7,7,20,0.58)"/>
+                    <path class="xm-spark" d="M24 17.6l1.8 4.6 4.6 1.8-4.6 1.8-1.8 4.6-1.8-4.6-4.6-1.8 4.6-1.8Z" fill="url(#xms)"/>
+                    <circle cx="15.8" cy="24" r="1.9" fill="#55efc4"/>
+                    <circle cx="32.2" cy="24" r="1.9" fill="#a29bfe"/>
+                </svg>
+            </span>
             <span class="logo-text">小秘</span>
         </a>
         <ul class="nav-links" id="navLinks">
@@ -868,7 +908,12 @@
 
     <!-- Chat Widget -->
     <div class="chat-widget">
-        <button class="chat-toggle" onclick="alert('说出你的需求，小秘为你匹配一切！对话功能即将上线 🤫')" title="说出需求，小秘帮你匹配">🤫</button>
+        <button class="chat-toggle" onclick="alert('说出你的需求，小秘为你匹配一切！对话功能即将上线 ✨')" title="说出需求，小秘帮你匹配">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 1.5l2.4 6.1 6.1 2.4-6.1 2.4L12 18.5l-2.4-6.1L3.5 10l6.1-2.4L12 1.5Z" fill="#ffffff"/>
+                <circle cx="19.5" cy="19.5" r="2" fill="#55efc4"/>
+            </svg>
+        </button>
     </div>
 
     <script>
