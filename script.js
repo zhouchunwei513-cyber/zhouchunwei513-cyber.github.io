@@ -20,7 +20,7 @@ function trackVisit() {
   if (!TRACK_API || TRACK_API.includes("REPLACE_WITH_WORKER_URL")) return;
   try {
     navigator.sendBeacon(
-      TRACK_API + "/api/track",
+      TRACK_API + "/collect",
       new Blob([JSON.stringify({ path: location.pathname, ua: navigator.userAgent })], {
         type: "application/json",
       })
