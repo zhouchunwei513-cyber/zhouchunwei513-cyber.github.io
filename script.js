@@ -26,7 +26,7 @@ function trackVisit() {
       })
     );
   } catch (e) {
-    fetch(TRACK_API + "/api/track", {
+    fetch(TRACK_API + "/collect", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: location.pathname, ua: navigator.userAgent }),
