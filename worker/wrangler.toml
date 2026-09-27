@@ -8,4 +8,7 @@ id = "27054ba28dc343cfa14d0cc2437bb69b"
 
 [vars]
 ADMIN_USER = "admin"
-ADMIN_PASSWORD = "***REMOVED***"
+# 安全：ADMIN_PASSWORD 严禁写入本仓库。
+# 请在 Cloudflare 控制台为该 Worker 配置加密环境变量（secret）ADMIN_PASSWORD，
+# 或首次登录管理后台后立即修改密码（修改后哈希存 KV，登录校验优先使用 KV 哈希）。
+# 若未配置任何密码，代码将回退到弱默认值，务必尽快设置！

@@ -174,3 +174,6 @@
 *.lz
 *.lzma
 *.iso
+
+# Cloudflare wrangler 本地缓存（含账户信息，禁止入库）
+worker/.wrangler/
